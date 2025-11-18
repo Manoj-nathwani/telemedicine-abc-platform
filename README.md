@@ -5,8 +5,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Built with Wasp](https://img.shields.io/badge/Built%20with-Wasp-orange)](https://wasp-lang.dev)
 
-## Overview
 > **Note**: This repository was created from [telemedicine-abc-wasp](https://github.com/Manoj-nathwani/telemedicine-abc-wasp) with a fresh commit history for open source release. For the full development history, see the original repository.
+
+## Overview
 
 Telemedicine ABC connects patients with qualified healthcare professionals through a simple SMS-to-phone consultation workflow. Patients send text messages describing their symptoms and receive phone consultations from licensed clinicians.
 
