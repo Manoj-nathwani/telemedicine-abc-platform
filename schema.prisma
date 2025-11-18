@@ -1,0 +1,193 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  system
+  admin
+  clinician
+}
+
+enum ConsultationRequestStatus {
+  pending
+  accepted
+  rejected
+}
+
+enum ConsultationCallStatus {
+  patient_answered
+  patient_no_answer
+  clinician_did_not_call
+}
+
+enum AuditEventType {
+  CREATE
+  UPDATE
+  // DELETE disabled in prismaSetup.ts
+}
+
+model User {
+  id                  Int                   @id @default(autoincrement())
+  name                String
+  role                UserRole              @default(clinician)
+  canHaveAvailability Boolean               @default(true)
+  createdAt           DateTime              @default(now())
+  consultations       Consultation[]
+  slots               Slot[]
+  consultationCalls   ConsultationCall[]
+  outgoingSmsMessages OutgoingSmsMessage[]
+  auditEvents         AuditEvent[]
+  consultationRequestsstatusActioned ConsultationRequest[] @relation("ConsultationRequestStatusChanger")
+}
+
+model Patient {
+  id          Int      @id @default(autoincrement())
+  name        String
+  dateOfBirth DateTime
+  createdAt   DateTime @default(now())
+
+  consultations Consultation[]
+
+  @@unique([name, dateOfBirth], name: "unique_patient_identity")
+  @@index([dateOfBirth])
+}
+
+model ConsultationRequest {
+  id                   Int                       @id @default(autoincrement())
+  phoneNumber          String
+  description          String
+  createdAt            DateTime                  @default(now())
+  status               ConsultationRequestStatus @default(pending)
+  statusActionedBy      User?                     @relation("ConsultationRequestStatusChanger", fields: [statusActionedByUserId], references: [id])
+  statusActionedByUserId Int?
+  statusActionedAt     DateTime?                 @updatedAt
+  consultation         Consultation?
+
+  @@index([status, createdAt])
+  @@index([createdAt])
+}
+
+model Slot {
+  id            Int      @id @default(autoincrement())
+  startDateTime DateTime
+  endDateTime   DateTime
+
+  user         User  @relation(fields: [userId], references: [id])
+  userId       Int   // Which user's availability slot
+  consultation Consultation?
+
+  @@index([userId, startDateTime])
+  @@index([startDateTime])
+}
+
+model Consultation {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  patient               Patient?            @relation(fields: [patientId], references: [id])
+  patientId             Int?                // NULL initially, set during first call
+  assignedTo            User                @relation(fields: [assignedToUserId], references: [id])
+  assignedToUserId      Int                 // Which user this consultation is assigned to
+  consultationRequest   ConsultationRequest @relation(fields: [consultationRequestId], references: [id])
+  consultationRequestId Int                 @unique
+  slot                  Slot                @relation(fields: [slotId], references: [id])
+  slotId                Int                 @unique
+  calls                 ConsultationCall[]
+  outgoingSmsMessages   OutgoingSmsMessage[]
+
+  @@index([assignedToUserId])
+  @@index([patientId])
+}
+
+model ConsultationCall {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  consultation      Consultation           @relation(fields: [consultationId], references: [id])
+  consultationId    Int
+  conductedBy       User                   @relation(fields: [conductedByUserId], references: [id])
+  conductedByUserId Int                    // Who conducted this call
+  status            ConsultationCallStatus
+
+  // Outcome data (only populated when status = 'patient_answered')
+  confirmations      Json?   // Array of confirmation strings: ["Patient answered the phone", "Patient is Homer Simpson, born 2025-01-01", "Safe location confirmed"]
+  chiefComplaint     String? // Main reason for consultation
+  reviewOfSystems    String? // Systematic review of body systems
+  pastMedicalHistory String? // Relevant past medical conditions
+  diagnosis          String? // Clinical diagnosis
+  labTests           String? // Lab tests ordered/reviewed
+  prescriptions      String? // Medications prescribed
+  safetyNetting      String? // When to return for care
+  followUp           String? // Follow-up plan
+  additionalNotes    String? // Any other relevant notes
+
+  @@index([consultationId, createdAt])
+  @@index([conductedByUserId])
+}
+
+model Config {
+  id                          Int    @id @default(autoincrement())
+  consultationDurationMinutes Int    @default(10)
+  breakDurationMinutes        Int    @default(5)
+  bufferTimeMinutes           Int    @default(5)
+  consultationSmsTemplates    Json   @default("[]")
+}
+
+enum SmsDirection {
+  incoming
+  outgoing
+}
+
+model SmsMessage {
+  id          Int          @id @default(autoincrement())
+  phoneNumber String
+  body        String
+  direction   SmsDirection @default(incoming)
+  createdAt   DateTime     @default(now())
+
+  outgoingSmsMessage OutgoingSmsMessage?
+}
+
+model OutgoingSmsMessage {
+  id          Int      @id @default(autoincrement())
+  phoneNumber String
+  body        String
+  createdAt   DateTime @default(now())
+  success     Boolean? // null = pending, true = success, false = failed
+
+  sentBy          User         @relation(fields: [sentByUserId], references: [id])
+  sentByUserId    Int          // Who sent this message
+  sentMessage     SmsMessage?  @relation(fields: [sentMessageId], references: [id])
+  sentMessageId   Int?         @unique
+  consultation    Consultation? @relation(fields: [consultationId], references: [id])
+  consultationId  Int?
+}
+
+model AuditEvent {
+  id              Int              @id @default(autoincrement())
+  eventTimestamp  DateTime         @default(now())
+
+  // Who performed the action
+  actorUserId     Int
+  actorUser       User             @relation(fields: [actorUserId], references: [id])
+
+  // What was affected
+  eventType       AuditEventType
+  entityType      String           // "User", "Patient", "ConsultationRequest", etc
+  entityId        Int              // The record ID that was affected
+
+  // What changed (for updates only)
+  // Stores the new values that were set: { "changes": { "role": "admin", "name": "New Name" } }
+  // Note: Only captures "after" values, not "before" (avoids extra DB queries for performance)
+  changedFields   Json?
+
+  @@index([actorUserId, eventTimestamp])
+  @@index([entityType, entityId])
+  @@index([eventTimestamp])
+  @@map("audit_events")
+}

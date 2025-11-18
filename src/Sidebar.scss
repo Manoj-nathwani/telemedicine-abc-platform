@@ -1,0 +1,18 @@
+@import "styles";
+
+#Sidebar {
+    .nav-link {
+        border-left: 3px solid transparent;
+        border-right: 3px solid transparent;
+    }
+
+    .nav-link.active {
+        background-color: $primary;
+        color: white;
+    }
+
+    .nav-link:not(.active):hover {
+        background-color: $custom-bg-lighter;
+        border-left-color: $primary;
+    }
+}

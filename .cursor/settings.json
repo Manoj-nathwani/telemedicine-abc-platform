@@ -1,0 +1,32 @@
+{
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/.wasp": true,
+    "**/.wasp-build": true,
+    "**/.wasp-out": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/migrations": true,
+    "**/.env*": true,
+    "**/*.log": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "**/coverage": true,
+    "**/.nyc_output": true,
+    "**/.npm": true,
+    "**/.eslintcache": true,
+    "**/.cache": true,
+    "**/.parcel-cache": true,
+    "**/.next": true,
+    "**/.nuxt": true,
+    "**/.out": true,
+    "**/.storybook-out": true,
+    "**/tmp": true,
+    "**/temp": true,
+    "**/*.db": true,
+    "**/*.sqlite": true,
+    "**/*.sqlite3": true,
+    "**/*.generated.*": true,
+    "**/playwright-report": true
+  }
+} 

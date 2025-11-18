@@ -1,0 +1,35 @@
+$primary: #d63384;
+
+@use "bootstrap/scss/bootstrap" with ($primary: $primary);
+
+$custom-bg: #f4f2ee;
+$custom-bg-lighter: #eef0f4;
+
+body {
+    background-color: $custom-bg;
+}
+
+.btn-light {
+    border-color: var(--bs-secondary-border-subtle) !important;
+}
+
+.cursor-pointer:hover {
+    cursor: pointer;
+}
+
+.expand-on-hover {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+}
+
+.offcanvas-header {
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+body {
+    font-size: 1.2rem;
+}

@@ -1,0 +1,51 @@
+{
+  "files.exclude": {
+    "**/.asp": true,
+    "**/node_modules": true,
+    "**/.git": true,
+    "**/.wasp": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "**/*.log": true,
+    "**/coverage": true,
+    "**/.nyc_output": true,
+    "**/.next": true,
+    "**/.nuxt": true,
+    "**/.cache": true,
+    "**/.parcel-cache": true,
+    "**/.vite": true,
+    "**/.turbo": true,
+    "**/.eslintcache": true,
+    "**/.stylelintcache": true,
+    "**/package-lock.json": false,
+    "**/yarn.lock": false,
+    "**/pnpm-lock.yaml": false,
+    "terraform/.terraform": true,
+    "terraform/.terraform.lock.hcl": true
+  },
+  "search.exclude": {
+    "**/.wasp": true,
+    "**/node_modules": true,
+    "**/public": true,
+    "**/migrations": true,
+    "**/__tests__": true,
+    "**/package-lock.json": true
+  },
+  
+  // DateTime enforcement rules
+  "typescript.preferences.includePackageJsonAutoImports": "off",
+  "typescript.suggest.autoImports": false,
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "eslint.validate": ["typescript", "typescriptreact"],
+  "eslint.run": "onSave",
+  "problems.decorations.enabled": true,
+  
+  // Custom snippets for dateTime utilities
+  "editor.quickSuggestions": {
+    "other": true,
+    "comments": false,
+    "strings": false
+  }
+}

@@ -1,0 +1,346 @@
+app telemedicineAbc {
+  wasp: {
+    version: "^0.18.0"
+  },
+  title: "Allô Munganga",
+  
+  head: [
+    "<link rel='stylesheet' href='/bootstrap-icons.css'>",
+    "<link rel='icon' type='image/png' href='/favicon.png'>"
+  ],
+  
+  client: {
+    setupFn: import { clientSetup } from "@src/clientSetup",
+    rootComponent: import { Root } from "@src/Root",
+    envValidationSchema: import { clientEnvValidationSchema } from "@src/env"
+  },
+
+  server: {
+    envValidationSchema: import { serverEnvValidationSchema } from "@src/env"
+  },
+
+  db: {
+    seeds: [
+      import { seedConfig } from "@src/seeds"
+    ],
+    prismaSetupFn: import { setupPrisma } from "@src/prismaSetup"
+  },
+
+  emailSender: {
+    provider: Mailgun,
+    defaultFrom: {
+      name: "Telemedicine abc",
+      email: "contact@telemedicineabc.com"
+    }
+  },
+
+  auth: {
+    userEntity: User,
+    methods: {
+      email: {
+        fromField: {
+          name: "Telemedicine ABC",
+          email: "contact@telemedicineabc.com"
+        },
+        emailVerification: {
+          clientRoute: EmailVerificationRoute,
+          getEmailContentFn: import { getEmailVerificationContent } from "@src/utils/emailTemplates"
+        },
+        passwordReset: {
+          clientRoute: PasswordResetRoute,
+          getEmailContentFn: import { getPasswordResetEmailContent } from "@src/utils/emailTemplates"
+        }
+      },
+    },
+    onAuthFailedRedirectTo: "/login",
+    onAuthSucceededRedirectTo: "/dashboard"
+  },
+
+}
+
+
+route DashboardRoute { path: "/dashboard", to: DashboardPage }
+page DashboardPage {
+  authRequired: true,
+  component: import { DashboardPage } from "@src/DashboardPage"
+}
+
+route LoginRoute { path: "/login", to: LoginPage }
+page LoginPage {
+  component: import { LoginPage } from "@src/auth/LoginPage"
+}
+
+route EmailVerificationRoute { path: "/email-verification", to: EmailVerificationPage }
+page EmailVerificationPage {
+  component: import { EmailVerificationPage } from "@src/auth/EmailVerificationPage"
+}
+
+route RequestPasswordResetRoute { path: "/request-password-reset", to: RequestPasswordResetPage }
+page RequestPasswordResetPage {
+  component: import { RequestPasswordResetPage } from "@src/auth/RequestPasswordResetPage"
+}
+route PasswordResetRoute { path: "/password-reset", to: PasswordResetPage }
+page PasswordResetPage {
+  component: import { PasswordResetPage } from "@src/auth/PasswordResetPage"
+}
+
+
+
+// Telemedicine routes
+route TriageRoute { path: "/triage", to: TriagePage }
+page TriagePage {
+  authRequired: true,
+  component: import { TriagePage } from "@src/TriagePage/TriagePage"
+}
+
+route ConsultationsRoute { path: "/consultations", to: ConsultationsPage }
+page ConsultationsPage {
+  authRequired: true,
+  component: import { ConsultationListPage } from "@src/ConsultationsPage/ConsultationListPage"
+}
+
+route ConsultationRoute { path: "/consultations/:id", to: ConsultationPage }
+page ConsultationPage {
+  authRequired: true,
+  component: import { ConsultationDetailPage } from "@src/ConsultationsPage/ConsultationDetailPage"
+}
+
+// Telemedicine queries and actions
+query getConsultationRequests {
+  fn: import { getConsultationRequests } from "@src/consultations/queries",
+  entities: [ConsultationRequest]
+}
+
+query getSlotsByDate {
+  fn: import { getSlotsByDate } from "@src/availability/queries",
+  entities: [Slot, User]
+}
+
+query getConsultationWithCalls {
+  fn: import { getConsultationWithCalls } from "@src/consultations/queries",
+  entities: [Consultation, ConsultationCall, OutgoingSmsMessage, User, Patient]
+}
+
+query getConfig {
+  fn: import { getConfig } from "@src/admin/config/queries",
+  entities: [Config]
+}
+
+query getSmsMessages {
+  fn: import { getSmsMessages } from "@src/admin/SmsMessagesPage/queries",
+  entities: [SmsMessage, OutgoingSmsMessage]
+}
+
+query getSmsMessagesByPhoneNumber {
+  fn: import { getSmsMessagesByPhoneNumber } from "@src/components/SmsMessageHistory/queries",
+  entities: [SmsMessage, OutgoingSmsMessage]
+}
+
+action updateConfig {
+  fn: import { updateConfig } from "@src/admin/config/actions",
+  entities: [Config]
+}
+
+action createConsultationRequest {
+  fn: import { createConsultationRequest } from "@src/consultations/actions",
+  entities: [ConsultationRequest]
+}
+
+action acceptConsultationRequest {
+  fn: import { acceptConsultationRequest } from "@src/consultations/actions",
+  entities: [ConsultationRequest, Consultation, Slot, OutgoingSmsMessage, Config, Patient]
+}
+
+action updateConsultation {
+  fn: import { updateConsultation } from "@src/consultations/actions",
+  entities: [Consultation, ConsultationRequest, Patient]
+}
+
+action rejectConsultationRequest {
+  fn: import { rejectConsultationRequest } from "@src/consultations/actions",
+  entities: [ConsultationRequest]
+}
+
+action deleteSlot {
+  fn: import { deleteSlot } from "@src/consultations/actions",
+  entities: [Slot]
+}
+
+action createConsultationCall {
+  fn: import { createConsultationCall } from "@src/consultations/actions",
+  entities: [Consultation, ConsultationCall, User, Patient]
+}
+
+action sendConsultationSms {
+  fn: import { sendConsultationSms } from "@src/consultations/actions",
+  entities: [Consultation, OutgoingSmsMessage, User, Patient]
+}
+
+action assignPatientToConsultation {
+  fn: import { assignPatientToConsultation } from "@src/consultations/actions",
+  entities: [Consultation, Patient]
+}
+
+action clearPatientFromConsultation {
+  fn: import { clearPatientFromConsultation } from "@src/consultations/actions",
+  entities: [Consultation]
+}
+
+action bulkUpdateSlots {
+  fn: import { bulkUpdateSlots } from "@src/availability/actions",
+  entities: [Slot, User]
+}
+
+// Root API endpoint
+api rootApi {
+  fn: import { rootHandler } from "@src/api/healthCheck",
+  httpRoute: (GET, "/api")
+}
+
+api healthCheckApi {
+  fn: import { healthCheckHandler } from "@src/api/healthCheck",
+  httpRoute: (GET, "/api/health")
+}
+
+// SMS API - Incoming messages from external SMS service
+api createSmsMessagesApi {
+  fn: import { createSmsMessagesApiHandler } from "@src/api/sms/api",
+  httpRoute: (POST, "/api/sms/messages"),
+  entities: [SmsMessage, ConsultationRequest]
+}
+
+// SMS API - Outgoing messages to external SMS service
+api getOutgoingMessagesApi {
+  fn: import { getOutgoingMessagesApiHandler } from "@src/api/sms/api",
+  httpRoute: (GET, "/api/sms/outgoing-messages"),
+  entities: [OutgoingSmsMessage]
+}
+
+api markOutgoingMessageAsSentApi {
+  fn: import { markOutgoingMessageAsSentApiHandler } from "@src/api/sms/api",
+  httpRoute: (POST, "/api/sms/outgoing-message"),
+  entities: [OutgoingSmsMessage, SmsMessage]
+}
+
+route UserManagementRoute { path: "/admin/users", to: UserManagementPage }
+page UserManagementPage {
+  authRequired: true,
+  component: import { UserManagementPage } from "@src/admin/UserManagementPage/UserManagementPage"
+}
+
+route AvailabilityRoute { path: "/availability", to: AvailabilityPage }
+page AvailabilityPage {
+  authRequired: true,
+  component: import { AvailabilityPage } from "@src/AvailabilityPage/AvailabilityPage"
+}
+
+route ConfigRoute { path: "/admin/config", to: ConfigPage }
+page ConfigPage {
+  authRequired: true,
+  component: import { ConfigPage } from "@src/admin/config/ConfigPage"
+}
+
+route SmsMessagesRoute { path: "/admin/sms-messages", to: SmsMessagesPage }
+page SmsMessagesPage {
+  authRequired: true,
+  component: import { SmsMessagesPage } from "@src/admin/SmsMessagesPage/SmsMessagesPage"
+}
+
+route ProfileRoute { path: "/profile", to: ProfilePage }
+page ProfilePage {
+  authRequired: true,
+  component: import { ProfilePage } from "@src/ProfilePage/ProfilePage"
+}
+
+route PatientsRoute { path: "/patients", to: PatientsPage }
+page PatientsPage {
+  authRequired: true,
+  component: import { PatientsPage } from "@src/patients/PatientsPage"
+}
+
+query getUsers {
+  fn: import { getUsers } from "@src/admin/UserManagementPage/queries",
+  entities: [User]
+}
+
+query getAvailabilityGrid {
+  fn: import { getAvailabilityGrid } from "@src/AvailabilityPage/queries",
+  entities: [User, Slot]
+}
+
+action createUser {
+  fn: import { createUser } from "@src/admin/UserManagementPage/actions",
+  entities: [User]
+}
+action updateUserRole {
+  fn: import { updateUserRole } from "@src/admin/UserManagementPage/actions",
+  entities: [User]
+}
+
+action updateUserAvailabilityEnabled {
+  fn: import { updateUserAvailabilityEnabled } from "@src/admin/UserManagementPage/actions",
+  entities: [User, Slot]
+}
+
+action resendInvitation {
+  fn: import { resendInvitation } from "@src/admin/UserManagementPage/actions",
+  entities: [User]
+}
+
+action updateUserProfile {
+  fn: import { updateUserProfile } from "@src/ProfilePage/actions",
+  entities: [User]
+}
+
+action sendSmsMessage {
+  fn: import { sendSmsMessage } from "@src/admin/UserManagementPage/actions",
+  entities: [OutgoingSmsMessage]
+}
+
+query getUser {
+  fn: import { getUser } from "@src/utils/auth/client",
+  entities: [User]
+}
+
+query getUserById {
+  fn: import { getUserById } from "@src/components/UserDisplay/queries",
+  entities: [User]
+}
+
+query searchPatientsQuery {
+  fn: import { searchPatients } from "@src/consultations/queries",
+  entities: [Patient, Consultation, ConsultationRequest]
+}
+
+query getPatientsWithConsultations {
+  fn: import { getPatientsWithConsultations } from "@src/consultations/queries",
+  entities: [Patient, Consultation, ConsultationRequest]
+}
+
+action createPatientAction {
+  fn: import { createPatient } from "@src/consultations/actions",
+  entities: [Patient]
+}
+
+route AuditLogsRoute { path: "/admin/audit-logs", to: AuditLogsPage }
+page AuditLogsPage {
+  authRequired: true,
+  component: import { AuditLogsPage } from "@src/admin/AuditLogsPage/AuditLogsPage"
+}
+
+query getAuditLogsByUser {
+  fn: import { getAuditLogsByUser } from "@src/admin/AuditLogsPage/queries",
+  entities: [AuditEvent, User]
+}
+
+query getRecentAuditLogs {
+  fn: import { getRecentAuditLogs } from "@src/admin/AuditLogsPage/queries",
+  entities: [AuditEvent, User]
+}
+
+query getAuditLogsByEntity {
+  fn: import { getAuditLogsByEntity } from "@src/admin/AuditLogsPage/queries",
+  entities: [AuditEvent, User]
+}
+
+

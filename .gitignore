@@ -1,0 +1,15 @@
+/.wasp/
+/.env
+/.env.server
+/.env.server.production
+/.env.server.production.local
+/.env.client
+/.env.production
+/.env.local
+/.env.development
+/.env.test
+/.env.deploy
+/node_modules
+/test-results
+/playwright-report
+.DS_Store
