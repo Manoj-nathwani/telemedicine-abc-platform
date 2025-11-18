@@ -1,14 +1,7 @@
 /.wasp/
-/.env
-/.env.server
-/.env.server.production
-/.env.server.production.local
-/.env.client
-/.env.production
-/.env.local
-/.env.development
-/.env.test
-/.env.deploy
+# Ignore all .env files except .example files
+/.env*
+!/.env*.example
 /node_modules
 /test-results
 /playwright-report

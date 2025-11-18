@@ -6,10 +6,20 @@ set -e
 
 echo "Resetting database (drop tables, apply migrations, run seed)..."
 
-# Load and export environment variables
+# Ensure migrations are up to date (this will create .wasp/out/server/.env if needed)
+wasp db migrate-dev || true
+
+# Load Wasp's generated env file (source of truth for DATABASE_URL)
 set -a
-source .env.server
-DATABASE_URL="$WASP_DEV_DB_URL"
+source .wasp/out/server/.env
+set +a
+
+# Load additional config from .env.server (API keys, etc.)
+if [ -f .env.server ]; then
+  set -a
+  source .env.server
+  set +a
+fi
 
 # Run Prisma reset
 cd .wasp/build/server
